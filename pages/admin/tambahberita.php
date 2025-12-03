@@ -6,8 +6,9 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 include '../../config/koneksi.php';
+$tes = "SELECT * FROM kategori_berita";
+$kategori = mysqli_query($conn, $tes);
 
-$kategori = mysqli_query($conn, "SELECT * FROM kategori_berita");
 ?>
 
 
@@ -34,77 +35,89 @@ $kategori = mysqli_query($conn, "SELECT * FROM kategori_berita");
 
   <div class="main-content">
     <header>
-     
+        <a href="kategori.php">List Kategori</a>
+        <a href="tambahberita.php">+ Tambah Berita</a>
     </header>
 
     <section class="cards">
         <div class="card">
-            <form action="tambahberita.php" method="POST" enctype="multipart/form-data">
-                <label for="">Judul Berita</label><br>
-                <input type="text" name="judul_berita" placeholder="Silakan isi Judul berita" required>
-                <br><br>
+            <form action="" method="POST" enctype="multipart/form-data">
+                <label for="">Judul Berita</label> <br>
+                <input type="text" name="judul_berita" placeholder="isikan judul berita" required>
+                <br>
+                <br>
 
-                <label for="">Kategori</label><br>
-                <select name="id_kategori" id="" required>
-                    <?php while($row = mysqli_fetch_assoc($kategori)) {  ?>
-                        <option value="<?= $row['id_kategori']; ?>"><?= $row['nama_kategori'] ?></option>
+                <label for="">Kategori</label> <br>
+                <select name="id_kategori" required>
+                    <option value="">--Pilih Kategori --</option>
+                    <?php while($row = mysqli_fetch_assoc($kategori)) {
+                        ?>
+                    <option value="<?= $row['id_kategori'] ?>"><?php echo $row['nama_kategori'] ?></option>
                     <?php } ?>
-                </select> <br> <br>
-
+                </select>
+                <br>
+                <br>
                 <label for="">Tanggal Berita</label> <br>
-                <input type="date" name="tanggal_berita" required>
+                <input type="date" name="tanggal_berita">
+                <br>
+                <br>
 
                 <label for="">Isi Berita</label> <br>
-                <textarea name="isi_berita" cols="50" rows="10" id=""></textarea> <br>
+                <textarea name="isi_berita" rows="15" cols="70"></textarea>
+                <br>
+                <br>
 
-                <label for="">Foto Berita</label> <br>
-                <input type="file" name="foto_berita" required>
+                <label for="">Gambar Berita</label> <br>
+                <input type="file" name="foto_berita">
 
-                <br><br>
-                <button type="submit" name="simpan">Simpan</button>
-
+                <br>
+                <br>
+                <button type="submit" name="simpan">Simpan Berita</button>
             </form>
         </div>
-     
     </section>
   </div>
+
 <?php 
-if(isset($_POST['simpan'])){
-    // data dari form html
-    $id_kategori = $_POST['id_kategori'];
-    $judul_berita = $_POST['judul_berita'];
-    $isi_berita = $_POST['isi_berita'];
-    $tanggal_berita = $_POST['tanggal_berita'];
+    if(isset($_POST['simpan'])){
+        $id_kategori = $_POST['id_kategori'];
+        $judul_berita = $_POST['judul_berita'];
+        $isi_berita = $_POST['isi_berita'];
+        $tanggal_berita = $_POST['tanggal_berita'];
 
-    // upload foto
-    $foto = $_FILES['foto_berita']['name'];
-    $tmp = $_FILES['foto_berita']['tmp_name'];
-    $folder = "../../uploads/";
+        // Upload File
+        $gambar = $_FILES['foto_berita']['name'];
+        $tmp = $_FILES['foto_berita']['tmp_name'];
+        $folder = '../../uploads/';
 
-    $foto_baru = uniqid() . "_" . $foto; //agar nama unik dan tidak redundan
+        // agar nama file unique
+        $foto_berita = uniqid() .  "_" . $gambar;
 
-    if($_FILES['foto_berita']['error'] !== UPLOAD_ERR_OK){
-        echo "Error Upload File: ".$_FILES['foto_berita']['error'];
+        // opsional
+        if($_FILES['foto_berita']['error'] !== UPLOAD_ERR_OK){
+            echo "ERROR UPLOAD GAMBAR, KODE: ". $_FILES['foto_berita']['error'];
+        }
+        // eksekusi Upload
+        move_uploaded_file($tmp, $folder . $foto_berita);
+
+        $query = "
+        INSERT INTO berita (id_kategori, judul_berita, isi_berita, foto_berita, tanggal_berita)
+        VALUES ('$id_kategori', '$judul_berita', '$isi_berita', '$foto_berita', '$tanggal_berita')
+        ";
+
+        if(mysqli_query($conn, $query)){
+            echo "<script>
+                alert('Berita Telah di unggah');
+                window.location.href='berita.php';
+            </script>";
+        }
+        else{
+             echo "<script>
+                alert('Berita Gagal di unggah');
+                window.location.href='berita.php';
+            </script>";
+        }
     }
-    move_uploaded_file($tmp, $folder . $foto_baru);
-
-    // Query simpan ke database
-    $query = "INSERT INTO berita (id_kategori, judul_berita, isi_berita, foto_berita, tanggal_berita)
-    VALUES ('$id_kategori', '$judul_berita', '$isi_berita', '$foto_berita', '$tanggal_berita')";
-
-    if(mysqli_query($conn, $query)){
-        echo "<script>
-                alert('Berita berhasil disimpan!');
-                window.location.href='berita.php'
-              </script>";
-    }
-    else{
-        "<script>
-                alert('Gagal!');
-                window.location.href='berita.php'
-        </script>";
-    }
-}
 ?>
 
 </body>
